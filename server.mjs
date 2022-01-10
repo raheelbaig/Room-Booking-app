@@ -1,0 +1,110 @@
+import express from "express";
+import Alexa, { SkillBuilders } from 'ask-sdk-core';
+import morgan from "morgan";
+import { ExpressAdapter } from 'ask-sdk-express-adapter';
+import mongoose from 'mongoose';
+import axios from "axios";
+
+mongoose.connect('mongodb+srv://dbuser:dbpassword@cluster0.nr4e4.mongodb.net/chatbotdb?retryWrites=true&w=majority');
+
+const Usage = mongoose.model('Usage', {
+  skillName: String,
+  clientName: String,
+  createdOn: { type: Date, default: Date.now },
+});
+
+const app = express();
+app.use(morgan("dev"))
+const PORT = process.env.PORT || 3000;
+
+
+const ErrorHandler = {
+  canHandle() {
+    return true;
+  },
+  handle(handlerInput, error) {
+    const speakOutput = 'Fallback intent: Sorry, I had trouble doing what you asked. Please try again.';
+    console.log(`~~~~ Error handled: ${JSON.stringify(error)}`);
+
+    return handlerInput.responseBuilder
+      .speak(speakOutput)
+      .reprompt(speakOutput)
+      .getResponse();
+  }
+};
+const LaunchRequestHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
+  },
+  handle(handlerInput) {
+
+    var newUsage = new Usage({
+      skillName: "Room booking skill",
+      clientName: "saylani class",
+    }).save();
+
+    const speakOutput = 'Welcome to my Room Booking app, how may i help you';
+    const reprompt = 'I am your virtual assistant. you can ask for book room';
+
+    return handlerInput.responseBuilder
+      .speak(speakOutput)
+      .reprompt(reprompt)
+      .withSimpleCard("Room Booking app", speakOutput)
+      .getResponse();
+  }
+};
+
+const bookingIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'bookingIntent';
+    },
+    handle(handlerInput) {
+        const book = Alexa.getSlotValue(handlerInput.requestEnvelope);
+        const speakOutput = 'your room is booked, Thank you for visit!';
+
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
+            .getResponse();
+    }
+};
+
+const CancelAndStopIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.CancelIntent'
+                || Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.StopIntent');
+    },
+    handle(handlerInput) {
+        const speakOutput = 'ok fine thank you for visit!';
+
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .getResponse();
+    }
+};
+
+const skillBuilder = SkillBuilders.custom()
+  .addRequestHandlers(
+    LaunchRequestHandler,
+    bookingIntentHandler,
+    CancelAndStopIntentHandler
+  )
+  .addErrorHandlers(
+    ErrorHandler
+  )
+const skill = skillBuilder.create();
+const adapter = new ExpressAdapter(skill, false, false);
+
+app.post('/api/v1/webhook-alexa', adapter.getRequestHandlers());
+
+app.use(express.json())
+app.get('/profile', (req, res, next) => {
+  res.send("this is a profile");
+});
+
+app.listen(PORT, () => {
+  console.log(`server is running on port ${PORT}`);
+});
+ 
