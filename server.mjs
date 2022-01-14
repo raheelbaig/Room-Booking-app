@@ -97,4 +97,9 @@ app.get('/profile', (req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`server is running on port ${PORT}`);
+<<<<<<< HEAD
 });
+=======
+});
+ 
+>>>>>>> 763b57ce560e9e4f6b8bae171ec923e317f48a67
