@@ -5,7 +5,7 @@ import { ExpressAdapter } from 'ask-sdk-express-adapter';
 import mongoose from 'mongoose';
 import axios from "axios";
 
-mongoose.connect('mongodb+srv://dbuser:dbpassword@cluster0.nr4e4.mongodb.net/chatbotdb?retryWrites=true&w=majority');
+mongoose.connect('mongodb+srv://raheel:baig8911@cluster0.bmry1.mongodb.net/myFirstDatabase?retryWrites=true&w=majority');
 
 const Usage = mongoose.model('Usage', {
   skillName: String,
@@ -58,38 +58,29 @@ const bookingIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'bookingIntent';
-    },
-    handle(handlerInput) {
-        const book = Alexa.getSlotValue(handlerInput.requestEnvelope);
+          },
+          handle(handlerInput) {
+            const book = Alexa.getSlotValue(handlerInput.requestEnvelope);
+            const selection = handlerInput.requestEnvelope.request.intent.confirmationStatus
+            console.log(selection);
+            if (selection === "DENIED") {
+              return handlerInput.responseBuilder
+                  .speak("ok cancelled")
+                  //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
+                  .getResponse();
+              
+            }
         const speakOutput = 'your room is booked, Thank you for visit!';
-
         return handlerInput.responseBuilder
-            .speak(speakOutput)
-            //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
-            .getResponse();
+        .speak(speakOutput)
+        //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
+        .getResponse();
     }
 };
-
-const CancelAndStopIntentHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.CancelIntent'
-                || Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.StopIntent');
-    },
-    handle(handlerInput) {
-        const speakOutput = 'ok fine thank you for visit!';
-
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            .getResponse();
-    }
-};
-
 const skillBuilder = SkillBuilders.custom()
   .addRequestHandlers(
     LaunchRequestHandler,
-    bookingIntentHandler,
-    CancelAndStopIntentHandler
+    bookingIntentHandler
   )
   .addErrorHandlers(
     ErrorHandler
@@ -107,4 +98,3 @@ app.get('/profile', (req, res, next) => {
 app.listen(PORT, () => {
   console.log(`server is running on port ${PORT}`);
 });
- 
